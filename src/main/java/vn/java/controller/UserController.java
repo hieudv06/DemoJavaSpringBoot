@@ -125,5 +125,18 @@ public class UserController {
     }
 
 
+    @Operation(summary = "Get list of users with sort by columns and search", description = "Send a request via this API to get user list by pageNo, pageSize and sort by multiple column")
+    @GetMapping("/list-with-sort-by-multiple-columns-search")
+    public ResponseData<?> getAllUsersWithSortByColumnsAndSearch(@RequestParam(defaultValue = "0", required = false) int pageNo,
+                                                                @RequestParam(defaultValue = "20", required = false) int pageSize,
+                                                                 @RequestParam(defaultValue = "20",required = false) String search,
+                                                                @RequestParam(required = false) String sortBy) {
+        log.info("Request get all of users with sort by columns and search");
+        return new ResponseData<>(HttpStatus.OK.value(), "users", userService.getAllUsersWithSortByColumnsAndSearch(pageNo, pageSize, search,sortBy));
+    }
+
+
+
+
 
 }

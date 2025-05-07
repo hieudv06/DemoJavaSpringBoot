@@ -8,8 +8,8 @@ import lombok.Getter;
 @Getter
 public class PageResponse<T> {
 
-    private int page;
-    private int size;
-    private int total;
+    private int pageNo;
+    private int pageSize;
+    private int totalPage;
     private T items;
 }

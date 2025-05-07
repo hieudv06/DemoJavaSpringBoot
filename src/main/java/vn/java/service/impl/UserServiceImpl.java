@@ -16,6 +16,7 @@ import vn.java.dto.response.UserDetailResponse;
 import vn.java.exception.ResourceNotFoundException;
 import vn.java.model.Address;
 import vn.java.model.User;
+import vn.java.repository.SearchRepository;
 import vn.java.repository.UserRepository;
 import vn.java.service.UserService;
 import vn.java.util.UserStatus;
@@ -36,6 +37,7 @@ import static vn.java.util.AppConst.SORT_BY;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final SearchRepository searchRepository;
 
     /**
      * Save new user to DB
@@ -218,6 +220,11 @@ public class UserServiceImpl implements UserService {
         return convertToPageResponse(users, pageable);
     }
 
+    @Override
+    public PageResponse<?> getAllUsersWithSortByColumnsAndSearch(int pageNo, int pageSize,String search, String sortsBy) {
+        return searchRepository.getAllUsersWithSortByColumnsAndSearch(pageNo, pageSize,search,sortsBy);
+    }
+
     /**
      * Get user by userId
      *
@@ -257,11 +264,15 @@ public class UserServiceImpl implements UserService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
+                .dateOfBirth(user.getDateOfBirth())
+                .gender(user.getGender())
+                .type(user.getType().name())
+                .status(user.getStatus())
                 .build()).toList();
         return PageResponse.builder()
-                .page(pageable.getPageNumber())
-                .size(pageable.getPageSize())
-                .total(users.getTotalPages())
+                .pageNo(pageable.getPageNumber())
+                .pageSize(pageable.getPageSize())
+                .totalPage(users.getTotalPages())
                 .items(response)
                 .build();
     }
