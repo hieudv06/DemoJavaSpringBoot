@@ -21,7 +21,7 @@ public class OpenAPIConfig {
     public GroupedOpenApi publicApi(@Value("${openapi.service.api-docs}") String apiDocs) {
         return GroupedOpenApi.builder()
                 .group(apiDocs) // /v3/api-docs/api-service
-                .packagesToScan("vn.tayjava.controller")
+                .packagesToScan("vn.java.controller")
                 .build();
     }
 

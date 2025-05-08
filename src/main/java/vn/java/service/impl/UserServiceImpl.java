@@ -60,17 +60,7 @@ public class UserServiceImpl implements UserService {
                 .type(UserType.valueOf(request.getType().toUpperCase()))
                 .addresses(convertToAddress(request.getAddresses()))
                 .build();
-        request.getAddresses().forEach(a ->
-                user.saveAddress(Address.builder()
-                        .apartmentNumber(a.getApartmentNumber())
-                        .floor(a.getFloor())
-                        .building(a.getBuilding())
-                        .streetNumber(a.getStreetNumber())
-                        .street(a.getStreet())
-                        .city(a.getCity())
-                        .country(a.getCountry())
-                        .addressType(a.getAddressType())
-                        .build()));
+        user.getAddresses().forEach(user::saveAddress);
         userRepository.save(user);
 
         log.info("User has added successfully, userId={}", user.getId());
@@ -221,8 +211,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public PageResponse<?> getAllUsersWithSortByColumnsAndSearch(int pageNo, int pageSize,String search, String sortsBy) {
-        return searchRepository.getAllUsersWithSortByColumnsAndSearch(pageNo, pageSize,search,sortsBy);
+    public PageResponse<?> getAllUsersWithSortByColumnsAndSearch(int pageNo, int pageSize,String search, String sortBy) {
+        return searchRepository.getAllUsersWithSortByColumnsAndSearch(pageNo, pageSize,search,sortBy);
+    }
+
+    @Override
+    public PageResponse<?> advanceSearchByCriteria(int pageNo, int pageSize, String sortBy, String... search) {
+        return searchRepository.advanceSearchByCriteria( pageNo,  pageSize,  sortBy,  search);
     }
 
     /**
