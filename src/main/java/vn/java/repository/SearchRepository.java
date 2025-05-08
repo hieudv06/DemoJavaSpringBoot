@@ -5,12 +5,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 import vn.java.dto.response.PageResponse;
+import vn.java.model.Address;
+import vn.java.model.User;
 import vn.java.repository.criteria.SearchCriteria;
+import vn.java.repository.criteria.UserSearchCriteriaQueryConsumer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,36 +84,101 @@ public class SearchRepository {
                .build();
    };
 
-   public PageResponse advanceSearchByCriteria (int pageNo, int pageSize, String sortBy, String... search){
+   public PageResponse advanceSearchByCriteria (int pageNo, int pageSize, String sortBy, String address, String... search){
        //loc   phần tử truyền vao ,viết biểu thức tách các cột
        // firstName:T, lastName:T,
 
        List<SearchCriteria> criteriaList = new ArrayList<>();
+       //1 .lấy ra danh sách user
        if(search !=null){
-           for (String sear : search) {
+           for (String s : search) {
                // firstName:value
                Pattern pattern = Pattern.compile("(\\w+?)(:|>|<)(.*)");
-               Matcher matcher = pattern.matcher(sortBy);
+               Matcher matcher = pattern.matcher(s);
                if (matcher.find()) {
                    criteriaList.add(new SearchCriteria(matcher.group(1),matcher.group(2),matcher.group(3)));
-                   //todo
                }
            }
 
        }
 
-
-
-       //1 .lấy ra danh sách user
-
-
             // 2. Lấy ra số lượng bản ghi và phân trang
+       List<User> user =  getUser(pageNo,pageSize,criteriaList,sortBy,address);
+       Long totalElements = getTotalElements(criteriaList,address);
 
        return PageResponse.builder()
-               .pageNo(pageNo)
-               .pageSize(pageSize)
-               .totalPage(0)
-               .items(null)
+               .pageNo(pageNo) //offset = vi tri cua ban ghi trong danh sach
+               .pageSize(pageSize) //
+               .totalPage(totalElements.intValue()) //total elements
+               .items(user)
                .build();
    }
+
+
+    private List<User> getUser(int pageNo, int pageSize, List<SearchCriteria> criteriaList, String sortBy,String address) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<User> query =criteriaBuilder.createQuery(User.class);
+        Root<User> root = query.from(User.class);
+
+        // Xu ly cac dieu kien tim kiem
+        Predicate predicate = criteriaBuilder.conjunction();
+        UserSearchCriteriaQueryConsumer  queryConsumer = new UserSearchCriteriaQueryConsumer(criteriaBuilder,predicate,root);
+        // them tim kiem - tong hop them addresses
+        if(StringUtils.hasLength(address)){
+            Join<Address,User> addressUserJoin =root.join("addresses");
+            Predicate addressPredicate = criteriaBuilder.like(addressUserJoin.get("city"), "%" + address + "%");
+            //tim kiem tren tat ca cac field cua address?
+            query.where(predicate,addressPredicate);
+
+        }else {
+            criteriaList.forEach(queryConsumer);
+            predicate = queryConsumer.getPredicate();
+            query.where(predicate);
+        }
+        //sort
+        if(StringUtils.hasLength(sortBy)){
+            Pattern pattern = Pattern.compile("(\\w+?)(:)(asc|desc)");
+            Matcher matcher = pattern.matcher(sortBy);
+            if (matcher.find()) {
+                String columnName = matcher.group(1);
+                if(matcher.group(3).equalsIgnoreCase("desc")){
+                    query.orderBy(criteriaBuilder.desc(root.get(columnName)));
+                }else{
+                    query.orderBy(criteriaBuilder.asc(root.get(columnName)));
+                }
+
+            }
+
+        }
+
+
+      return  entityManager.createQuery(query).setFirstResult(pageNo).setMaxResults(pageSize).getResultList();
+
+    }
+    private Long getTotalElements(List<SearchCriteria> criteriaList, String address) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Long> query =criteriaBuilder.createQuery(Long.class);
+        Root<User> root = query.from(User.class);
+
+        // Xu ly cac dieu kien tim kiem
+        Predicate predicate = criteriaBuilder.conjunction();
+        UserSearchCriteriaQueryConsumer  queryConsumer = new UserSearchCriteriaQueryConsumer(criteriaBuilder,predicate,root);
+        // them tim kiem - tong hop them addresses
+        if(StringUtils.hasLength(address)){
+            Join<Address,User> addressUserJoin =root.join("addresses");
+            Predicate addressPredicate = criteriaBuilder.like(addressUserJoin.get("city"), "%" + address + "%");
+            //tim kiem tren tat ca cac field cua address?
+            query.select(criteriaBuilder.count(root));
+            query.where(predicate,addressPredicate);
+        }else {
+            criteriaList.forEach(queryConsumer);
+            predicate = queryConsumer.getPredicate();
+            query.select(criteriaBuilder.count(root));
+            query.where(predicate);
+        }
+
+        return  entityManager.createQuery(query).getSingleResult();
+
+    }
+
 }

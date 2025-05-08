@@ -216,8 +216,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public PageResponse<?> advanceSearchByCriteria(int pageNo, int pageSize, String sortBy, String... search) {
-        return searchRepository.advanceSearchByCriteria( pageNo,  pageSize,  sortBy,  search);
+    public PageResponse<?> advanceSearchByCriteria(int pageNo, int pageSize, String sortBy,String address, String... search) {
+        return searchRepository.advanceSearchByCriteria( pageNo,  pageSize,  sortBy,address,search);
     }
 
     /**

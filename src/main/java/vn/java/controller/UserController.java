@@ -141,9 +141,10 @@ public class UserController {
     public ResponseData<?> advanceSearchByCriteria(@RequestParam(defaultValue = "0", required = false) int pageNo,
                                                                  @RequestParam(defaultValue = "20", required = false) int pageSize,
                                                                  @RequestParam(required = false) String sortBy,
+                                                                 @RequestParam(required = false) String address,
                                                                  @RequestParam(required = false) String ...search) {
         log.info("Request get all of users with sort by columns and search");
-        return new ResponseData<>(HttpStatus.OK.value(), "users", userService.advanceSearchByCriteria(pageNo, pageSize,sortBy,search));
+        return new ResponseData<>(HttpStatus.OK.value(), "users", userService.advanceSearchByCriteria(pageNo, pageSize,sortBy,address,search));
     }
 
 
