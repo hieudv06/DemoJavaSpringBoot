@@ -6,12 +6,14 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
 import vn.java.model.User;
+import vn.java.util.Gender;
 
 public class UserSpecification implements Specification<User> {
 
     private SpecSearchCriteria criteria;
 
-    public UserSpecification(SpecSearchCriteria specSearchCriteria) {
+    public UserSpecification(SpecSearchCriteria criteria) {
+        this.criteria =criteria;
     }
 
 

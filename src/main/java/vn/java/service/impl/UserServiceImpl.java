@@ -224,13 +224,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public PageResponse<?> advanceSearchBySpecification(Pageable pageable, String[] user, String[] adress) {
+    public PageResponse<?> advanceSearchBySpecification(Pageable pageable, String[] user, String[] address) {
 
 
         List<User> list = new ArrayList<>();
-        if(user !=null && adress !=null){
+        if(user !=null && address !=null){
             //tim kiem tren user va address -->join table
-        }else if(user !=null && adress ==null){
+
+            return searchRepository.getUserJoinedAddress(pageable, user, address);
+
+        }else if(user !=null && address ==null){
             // tim kiem tren bang user  -> khong can join sang bang address
 
 //            Specification<User> spec = UserSpec.hasFirstName("B");
