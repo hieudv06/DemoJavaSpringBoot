@@ -6,8 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
 import vn.java.configuration.Translator;
 import vn.java.dto.request.AddressDTO;
 import vn.java.dto.request.UserRequestDTO;
@@ -18,14 +20,14 @@ import vn.java.model.Address;
 import vn.java.model.User;
 import vn.java.repository.SearchRepository;
 import vn.java.repository.UserRepository;
+import vn.java.repository.specification.UserSpec;
+import vn.java.repository.specification.UserSpecificationsBuilder;
 import vn.java.service.UserService;
+import vn.java.util.Gender;
 import vn.java.util.UserStatus;
 import vn.java.util.UserType;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,6 +40,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final SearchRepository searchRepository;
+    private final RestClient.Builder builder;
 
     /**
      * Save new user to DB
@@ -218,6 +221,49 @@ public class UserServiceImpl implements UserService {
     @Override
     public PageResponse<?> advanceSearchByCriteria(int pageNo, int pageSize, String sortBy,String address, String... search) {
         return searchRepository.advanceSearchByCriteria( pageNo,  pageSize,  sortBy,address,search);
+    }
+
+    @Override
+    public PageResponse<?> advanceSearchBySpecification(Pageable pageable, String[] user, String[] adress) {
+
+
+        List<User> list = new ArrayList<>();
+        if(user !=null && adress !=null){
+            //tim kiem tren user va address -->join table
+        }else if(user !=null && adress ==null){
+            // tim kiem tren bang user  -> khong can join sang bang address
+
+//            Specification<User> spec = UserSpec.hasFirstName("B");
+//            Specification<User> genderSpec = UserSpec.notEqualGender(Gender.MALE);
+//
+//            Specification<User> finalSpec =spec.and(genderSpec);
+
+            UserSpecificationsBuilder builder = new UserSpecificationsBuilder();
+
+            for(String s : user){
+                Pattern pattern =Pattern.compile("(\\w+?)([<:>~!])(.*)(\\p{Punct}?)(\\p{Punct}?)");
+                Matcher matcher =pattern.matcher(s);
+                if (matcher.find()) {
+                    builder.with(matcher.group(1),matcher.group(2),matcher.group(3),matcher.group(4),matcher.group(5));
+
+                }
+            }
+
+            list = userRepository.findAll(builder.build());
+            return PageResponse.builder()
+                    .pageNo(pageable.getPageNumber())
+                    .pageSize(pageable.getPageSize())
+                    .totalPage(10)
+                    .items(list)
+                    .build();
+
+        }
+        return PageResponse.builder()
+                .pageNo(pageable.getPageNumber())
+                .pageSize(pageable.getPageSize())
+                .totalPage(10)
+                .items(list)
+                .build();
     }
 
     /**

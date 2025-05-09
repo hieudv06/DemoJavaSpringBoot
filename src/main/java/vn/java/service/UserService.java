@@ -1,5 +1,6 @@
 package vn.java.service;
 
+import org.springframework.data.domain.Pageable;
 import vn.java.dto.request.UserRequestDTO;
 import vn.java.dto.response.PageResponse;
 import vn.java.dto.response.UserDetailResponse;
@@ -24,4 +25,5 @@ public interface UserService {
     PageResponse<?> getAllUsersWithSortByColumnsAndSearch(int pageNo, int pageSize, String search, String sortBy);
     PageResponse<?> advanceSearchByCriteria(int pageNo, int pageSize, String sortBy,String address, String ...search);
 
+    PageResponse<?> advanceSearchBySpecification(Pageable pageable, String[] user, String[] address);
 }
