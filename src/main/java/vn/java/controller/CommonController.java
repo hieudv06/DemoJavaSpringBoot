@@ -1,8 +1,10 @@
 package vn.java.controller;
 
-import jakarta.mail.MessagingException;
+
+import jakarta.mail.Multipart;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpRange;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,13 +24,16 @@ public class CommonController {
     private final MailService mailService;
 
     @PostMapping("/send-email")
-    public ResponseData<String> sendEmail(@RequestParam String recipients, @RequestParam String subject, @RequestParam String content , @RequestParam(required = false)MultipartFile[] files) throws MessagingException {
-       try{
-           return new ResponseData<>(HttpStatus.ACCEPTED.value(),mailService.sendMail(recipients,subject,content,files));
-       }catch (Exception e){
-           log.error("Sending email was failure , erroMesssage ={}",e.getMessage());
-           return  new ResponseError(HttpStatus.BAD_REQUEST.value(),"Sending email was failure");
-       }
+    public ResponseData<String> sendEmail(@RequestParam String recipients, @RequestParam String subject , @RequestParam String content
+    , @RequestParam(required = false) MultipartFile[] files){
+
+        try{
+            return new ResponseData<>(HttpStatus.ACCEPTED.value(),mailService.sendMail(recipients,subject,content,files));
+        }catch (Exception e){
+            log.error("Sending email failure, errorMessage={}",e.getMessage());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(),"");
+        }
+
 
     }
 }
