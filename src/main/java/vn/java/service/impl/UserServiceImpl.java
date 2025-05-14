@@ -1,15 +1,14 @@
 package vn.java.service.impl;
 
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestClient;
 import vn.java.configuration.Translator;
 import vn.java.dto.request.AddressDTO;
 import vn.java.dto.request.UserRequestDTO;
@@ -20,13 +19,13 @@ import vn.java.model.Address;
 import vn.java.model.User;
 import vn.java.repository.SearchRepository;
 import vn.java.repository.UserRepository;
-import vn.java.repository.specification.UserSpec;
 import vn.java.repository.specification.UserSpecificationsBuilder;
+import vn.java.service.MailService;
 import vn.java.service.UserService;
-import vn.java.util.Gender;
 import vn.java.util.UserStatus;
 import vn.java.util.UserType;
 
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,7 +39,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final SearchRepository searchRepository;
-    private final RestClient.Builder builder;
+    private final MailService mailService;
 
     /**
      * Save new user to DB
@@ -49,7 +48,7 @@ public class UserServiceImpl implements UserService {
      * @return userId
      */
     @Override
-    public long saveUser(UserRequestDTO request) {
+    public long saveUser(UserRequestDTO request) throws MessagingException, UnsupportedEncodingException {
         User user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -65,6 +64,11 @@ public class UserServiceImpl implements UserService {
                 .build();
         user.getAddresses().forEach(user::saveAddress);
         userRepository.save(user);
+
+        if(user.getId() != null){
+            // send email confirm here
+            mailService.sendConfirmLink(user.getEmail(),user.getId(),"secretCode");
+        }
 
         log.info("User has added successfully, userId={}", user.getId());
 
@@ -267,6 +271,11 @@ public class UserServiceImpl implements UserService {
                 .totalPage(10)
                 .items(list)
                 .build();
+    }
+
+    @Override
+    public void confirmUser(int userId, String secretCode) {
+        log.info("Confirmed!");
     }
 
     /**

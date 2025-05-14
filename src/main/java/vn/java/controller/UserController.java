@@ -2,6 +2,8 @@ package vn.java.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,8 @@ import vn.java.dto.response.ResponseError;
 import vn.java.dto.response.UserDetailResponse;
 import vn.java.service.UserService;
 import vn.java.util.UserStatus;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/user")
@@ -71,6 +75,24 @@ public class UserController {
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Change status fail");
         }
     }
+
+    @GetMapping("/confirm/{userId}")
+    public ResponseData<?> confirmUser(@Min(1) @PathVariable int userId, @RequestParam String secretCode, HttpServletResponse response) throws IOException {
+        log.info("Confirm user userId={},secretCode={}",userId,secretCode);
+        try {
+            userService.confirmUser(userId, secretCode);
+            return new ResponseData<>(HttpStatus.ACCEPTED.value(),"User confirmed!");
+        } catch (Exception e) {
+            log.error(ERROR_MESSAGE, e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Confirmation was failure");
+        } finally {
+            // Todo direct to login page
+            response.sendRedirect("https://practicetestautomation.com/practice-test-login/");
+        }
+    }
+
+
+
 
     @Operation(summary = "Delete user permanently", description = "Send a request via this API to delete user permanently")
     @DeleteMapping("/{userId}")

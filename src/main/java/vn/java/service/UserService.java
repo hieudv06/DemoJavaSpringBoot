@@ -1,14 +1,17 @@
 package vn.java.service;
 
+import jakarta.mail.MessagingException;
 import org.springframework.data.domain.Pageable;
 import vn.java.dto.request.UserRequestDTO;
 import vn.java.dto.response.PageResponse;
 import vn.java.dto.response.UserDetailResponse;
 import vn.java.util.UserStatus;
 
+import java.io.UnsupportedEncodingException;
+
 public interface UserService {
 
-    long saveUser(UserRequestDTO request);
+    long saveUser(UserRequestDTO request) throws MessagingException, UnsupportedEncodingException;
 
     void updateUser(long userId, UserRequestDTO request);
 
@@ -26,4 +29,6 @@ public interface UserService {
     PageResponse<?> advanceSearchByCriteria(int pageNo, int pageSize, String sortBy,String address, String ...search);
 
     PageResponse<?> advanceSearchBySpecification(Pageable pageable, String[] user, String[] address);
+
+    void confirmUser(int userId, String secretCode);
 }

@@ -2,7 +2,6 @@ package vn.java.service;
 
 
 import jakarta.mail.MessagingException;
-import jakarta.mail.Multipart;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +11,13 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -23,6 +27,8 @@ import java.util.Objects;
 
 public class MailService {
     private final JavaMailSender mailSender;
+
+    private final SpringTemplateEngine springTemplateEngine;
 
     @Value("${spring.mail.from}")
     private String emailFrom;
@@ -50,5 +56,27 @@ public class MailService {
         log.info("Email has been send successfully, recipients= {}",recipients);
         return "sent";
 
+    }
+
+    public void sendConfirmLink(String emailTo, Long userId, String secretCode) throws MessagingException, UnsupportedEncodingException {
+        log.info("Sending email confirm account");
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message,MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
+        Context context = new Context();
+        String  linkConfirm = String.format("http://localhost:8080/user/confirm/%s?secretCode=%s",userId,secretCode);
+        Map<String,Object> properties = new HashMap<>();
+        properties.put("linkConfirm",linkConfirm);
+        context.setVariables(properties);
+
+        helper.setFrom(emailFrom,"Hieudv");
+        helper.setTo(emailTo);
+        helper.setSubject("Please confirm your account");
+
+        String html = springTemplateEngine.process("confirm-email.html",context);
+        helper.setText(html,true);
+
+        mailSender.send(message);
+        log.info("email sent");
     }
 }
