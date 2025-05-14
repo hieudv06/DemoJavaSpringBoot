@@ -5,9 +5,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.Ordered;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @Profile("!prod")
@@ -15,16 +22,29 @@ public class AppConfig {
 
 
     @Bean
-    public FilterRegistrationBean<CorsFilter> corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:5173");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-        source.registerCorsConfiguration("/**", config);
-        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
-        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
-        return bean;
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer(){
+            @Override
+            public void addCorsMappings(CorsRegistry registry){
+                registry.addMapping("**")
+                        .allowedOrigins("http://localhost:8080")
+                        .allowedMethods("GET","POST","PUT","DELETE")
+                        .allowCredentials(false)
+                        .maxAge(3600);
+            }
+        };
     }
+
+    @Bean
+    public PasswordEncoder getPasswordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
+    public SecurityFilterChain configure (HttpSecurity http) throws Exception{
+        http.csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorizeRequests ->authorizeRequests
+                        .requestMatchers("/login").permitAll().anyRequest().authenticated());
+        return http.build();
+
+    }
+
 }
