@@ -12,8 +12,9 @@ public record RoleService(RoleRepository roleRepository) {
     @PostConstruct
     public List<Role> findAll(){
 
-        List<Role> roles =roleRepository.getAllByUserId(2l);
-        return roles;
+//        List<Role> roles =roleRepository.getAllByUserId(2l);
+//        return roles;
+        return null;
     };
 
 
