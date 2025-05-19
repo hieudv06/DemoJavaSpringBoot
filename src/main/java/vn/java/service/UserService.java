@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import vn.java.dto.request.UserRequestDTO;
 import vn.java.dto.response.PageResponse;
 import vn.java.dto.response.UserDetailResponse;
+import vn.java.model.User;
 import vn.java.util.UserStatus;
 
 import java.io.UnsupportedEncodingException;
@@ -15,6 +16,9 @@ public interface UserService {
     UserDetailsService userDetailService();
 
     long saveUser(UserRequestDTO request) throws MessagingException, UnsupportedEncodingException;
+    void save(User user);
+    User getByUsername(String username);
+    User getByEmail(String email);
 
     void updateUser(long userId, UserRequestDTO request);
 

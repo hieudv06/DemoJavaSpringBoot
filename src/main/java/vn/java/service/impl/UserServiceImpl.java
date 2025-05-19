@@ -82,6 +82,21 @@ public class UserServiceImpl implements UserService {
         return user.getId();
     }
 
+    @Override
+    public void save(User user){
+        userRepository.save(user);
+    }
+
+    @Override
+    public User getByUsername(String username) {
+        return userRepository.findByUsername(username).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    @Override
+    public User getByEmail(String email) {
+        return userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
     /**
      * Update user by userId
      *
