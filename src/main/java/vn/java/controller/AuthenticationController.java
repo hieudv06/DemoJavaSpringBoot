@@ -26,7 +26,7 @@ public class AuthenticationController {
 
     @PostMapping("/access-token")
     public ResponseEntity<TokenResponse> login(@RequestBody SignInRequest signInRequest){
-        return new ResponseEntity<>( authenticationService.authenticate(signInRequest), HttpStatus.OK);
+        return new ResponseEntity<>( authenticationService.accessToken(signInRequest), HttpStatus.OK);
     }
 
     @PostMapping("/refresh-token")

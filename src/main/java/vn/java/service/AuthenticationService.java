@@ -6,16 +6,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.java.dto.request.ResetPasswordRequest;
 import vn.java.dto.request.SignInRequest;
 import vn.java.dto.response.TokenResponse;
 import vn.java.exception.InvalidDataException;
+import vn.java.model.RedisToken;
 import vn.java.model.Token;
 import vn.java.model.User;
 import vn.java.repository.UserRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 import static vn.java.util.TokenType.*;
@@ -25,25 +28,42 @@ import static vn.java.util.TokenType.*;
 @RequiredArgsConstructor
 public class AuthenticationService {
 
-    private final UserRepository userRepository;
     private final AuthenticationManager authenticationManager;
+    private final RedisTokenService redisTokenService;
     private final JwtService jwtService;
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;
 
-    public TokenResponse authenticate(SignInRequest signInRequest) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signInRequest.getUsername(), signInRequest.getPassword()));
-        var user = userRepository.findByUsername(signInRequest.getUsername()).orElseThrow(() -> new RuntimeException("Username or Password is incorrect"));
+    public TokenResponse accessToken(SignInRequest signInRequest) {
+
+        log.info("------------- authenticate -----------");
+        var user = userService.getByUsername(signInRequest.getUsername());
+        if(!user.isEnabled()){
+            throw new InvalidDataException("User not active");
+        }
+        List<String> roles =userService.getAllRolesByUserId(user.getId());
+        List<SimpleGrantedAuthority> authorities = roles.stream().map(SimpleGrantedAuthority::new).toList();
+
+
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signInRequest.getUsername(), signInRequest.getPassword(),authorities));
+
+
 
         String accessToken = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
 
         //save token va refresh token vao db
-        tokenService.save(Token.builder()
-                .username(user.getUsername())
+//        tokenService.save(Token.builder()
+//                .username(user.getUsername())
+//                .accessToken(accessToken)
+//                .refreshToken(refreshToken).build());
+
+        redisTokenService.save(RedisToken.builder()
+                .id(user.getUsername())
                 .accessToken(accessToken)
-                .refreshToken(refreshToken).build());
+                .refreshToken(refreshToken)
+                .build());
 
         return TokenResponse.builder()
                 .accessToken(accessToken)
@@ -53,6 +73,9 @@ public class AuthenticationService {
     }
 
     public TokenResponse refreshToken(HttpServletRequest request) {
+
+        log.info("---------- refreshToken ----------");
+
         String refreshToken =request.getHeader("x-token");
 
         if(StringUtils.isBlank(refreshToken)){
@@ -60,21 +83,29 @@ public class AuthenticationService {
         }
         // extract user from token
         final  String userName =jwtService.extractUsername(refreshToken,REFRESH_TOKEN);
-        Optional<User> user = userRepository.findByUsername(userName);
-        if(!jwtService.isValid(refreshToken,REFRESH_TOKEN,user.get())){
+        User user = userService.getByUsername(userName);
+        if(!jwtService.isValid(refreshToken,REFRESH_TOKEN,user)){
             throw new InvalidDataException("Token is invalid");
         }
 
-        String accessToken =jwtService.generateToken(user.get());
+        String accessToken =jwtService.generateToken(user);
+
+        // save token to db
+//         tokenService.save(Token.builder().username(user.getUsername()).accessToken(accessToken).refreshToken(refreshToken).build());
+        redisTokenService.save(RedisToken.builder().id(user.getUsername()).accessToken(accessToken).refreshToken(refreshToken).build());
 
 
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .userId(user.get().getId())
+                .userId(user.getId())
                 .build();
     }
 
+
+
+
+    //remove Token
     public String logout(HttpServletRequest request) {
         // validate
         String token =request.getHeader("x-token");
@@ -83,8 +114,11 @@ public class AuthenticationService {
         }
         //extract user from token
         final String username =jwtService.extractUsername(token,ACCESS_TOKEN);
-        Token tokenRepository =tokenService.getByUsername(username);
-        tokenService.delete(tokenRepository);
+//        Token tokenRepository =tokenService.getByUsername(username);
+//        tokenService.delete(tokenRepository);
+        //todo : vô hiệu hóa token
+        redisTokenService.remove(username);
+
         return "Deleted Token ";
     }
 
@@ -97,6 +131,8 @@ public class AuthenticationService {
         }
         // Generate reset token
         String resetToken =jwtService.generateResetToken(user);
+        redisTokenService.save(RedisToken.builder().id(user.getUsername()).resetToken(resetToken).build());
+
 
         // todo send email confirmLink
         String confirmLink = String.format("curl --location 'http://localhost:8080/auth/reset-password' \\\n" +
@@ -112,6 +148,9 @@ public class AuthenticationService {
         log.info("----- Rest Password ------");
         final  String userName =jwtService.extractUsername(secretKey,RESET_TOKEN);
         var user = userService.getByUsername(userName);
+       redisTokenService.getById(user.getUsername());
+
+
         if(!jwtService.isValid(secretKey,RESET_TOKEN,user)){
             throw new InvalidDataException("Token is invalid");
         }

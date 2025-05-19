@@ -20,8 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long> , JpaSpecifica
 
     Optional<User> findByUsername(String username);
 
-    @Query(value = "select r from Role r inner join  UserHasRole ur on r.id =ur.user.id where ur.user.id=:userId")
-    List<User> getAlRolesByUserId(Long userId);
-
-
+    @Query(value = "select r.name from Role r inner join  UserHasRole ur on r.id =ur.user.id where ur.user.id= :userId")
+    List<String> findAllRolesByUserId(long userId);
 }

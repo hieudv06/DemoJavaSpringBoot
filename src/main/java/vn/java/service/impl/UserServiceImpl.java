@@ -300,6 +300,11 @@ public class UserServiceImpl implements UserService {
         log.info("Confirmed!");
     }
 
+    @Override
+    public List<String> getAllRolesByUserId(long userId) {
+        return userRepository.findAllRolesByUserId(userId);
+    }
+
     /**
      * Get user by userId
      *

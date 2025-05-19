@@ -10,6 +10,7 @@ import vn.java.model.User;
 import vn.java.util.UserStatus;
 
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 public interface UserService {
 
@@ -38,4 +39,5 @@ public interface UserService {
     PageResponse<?> advanceSearchBySpecification(Pageable pageable, String[] user, String[] address);
 
     void confirmUser(int userId, String secretCode);
+    List<String> getAllRolesByUserId(long userId);
 }
